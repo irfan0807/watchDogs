@@ -20,6 +20,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log("Client connected:", socket.id);
     
     socket.on("user:online", async (userId: string) => {
+      console.log("User online:", userId, "socket:", socket.id);
       connectedUsers.set(userId, socket.id);
       await storage.updateUserOnlineStatus(userId, true);
       io.emit("user:status", { userId, isOnline: true });
@@ -61,6 +62,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     socket.on("contact:request", async (data: { fromUserId: string; toUserId: string }) => {
       try {
+        console.log("Contact request:", data.fromUserId, "->", data.toUserId);
         const existing = await storage.getContactRequest(data.fromUserId, data.toUserId);
         if (existing) {
           socket.emit("contact:request:error", { error: "Request already sent" });
@@ -71,11 +73,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const fromUser = await storage.getUser(data.fromUserId);
         
         const recipientSocketId = connectedUsers.get(data.toUserId);
+        console.log("Recipient socket for", data.toUserId, ":", recipientSocketId ? "found" : "NOT FOUND");
+        console.log("Connected users:", Array.from(connectedUsers.keys()));
         if (recipientSocketId && fromUser) {
           io.to(recipientSocketId).emit("contact:request:received", {
             ...request,
             fromUser,
           });
+          console.log("Sent contact:request:received to", data.toUserId);
         }
         
         socket.emit("contact:request:sent", request);
@@ -86,6 +91,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     socket.on("contact:accept", async (data: { requestId: string; userId: string; contactId: string }) => {
       try {
+        console.log("Contact accept:", data.userId, "accepts request from", data.contactId);
         await storage.updateContactRequestStatus(data.requestId, "accepted");
         
         await storage.createContact({
@@ -103,14 +109,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const contact = await storage.getUser(data.contactId);
         
         const contactSocketId = connectedUsers.get(data.contactId);
+        console.log("Contact socket for", data.contactId, ":", contactSocketId ? "found" : "NOT FOUND");
+        console.log("Connected users:", Array.from(connectedUsers.keys()));
         if (contactSocketId && user) {
           io.to(contactSocketId).emit("contact:accepted", {
             contact: user,
           });
+          console.log("Sent contact:accepted to", data.contactId);
         }
         
         socket.emit("contact:accepted", { contact });
+        console.log("Sent contact:accepted to accepter");
       } catch (error) {
+        console.error("Contact accept error:", error);
         socket.emit("contact:error", { error: "Failed to accept request" });
       }
     });
