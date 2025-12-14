@@ -26,6 +26,7 @@ export interface IStorage {
   getContact(userId: string, contactId: string): Promise<Contact | undefined>;
   createContact(contact: InsertContact): Promise<Contact>;
   updateContactVerification(id: string, isVerified: boolean, safetyNumber: string): Promise<void>;
+  deleteContact(userId: string, contactId: string): Promise<void>;
   
   getMessages(userId: string, contactId: string): Promise<Message[]>;
   createMessage(message: InsertMessage): Promise<Message>;
@@ -98,6 +99,15 @@ export class DatabaseStorage implements IStorage {
     await db.update(contacts)
       .set({ isVerified, safetyNumber, updatedAt: new Date() })
       .where(eq(contacts.id, id));
+  }
+
+  async deleteContact(userId: string, contactId: string): Promise<void> {
+    await db.delete(contacts).where(
+      and(eq(contacts.userId, userId), eq(contacts.contactId, contactId))
+    );
+    await db.delete(contacts).where(
+      and(eq(contacts.userId, contactId), eq(contacts.contactId, userId))
+    );
   }
 
   async getMessages(userId: string, contactId: string): Promise<Message[]> {

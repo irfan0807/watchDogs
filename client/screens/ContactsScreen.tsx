@@ -18,7 +18,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Feather } from "@expo/vector-icons";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { getSocket, emitContactAccept, emitContactReject } from "@/lib/socket";
+import { getSocket, emitContactAccept, emitContactReject, emitContactDelete } from "@/lib/socket";
 import * as Haptics from "expo-haptics";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -93,14 +93,23 @@ export default function ContactsScreen() {
       refetchRequests();
     };
 
+    const handleContactDeleted = () => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      refetchContacts();
+    };
+
     socket.on("user:status", handleUserStatus);
     socket.on("contact:request:received", handleContactRequest);
     socket.on("contact:accepted", handleContactAccepted);
+    socket.on("contact:deleted", handleContactDeleted);
+    socket.on("contact:deleted:success", handleContactDeleted);
 
     return () => {
       socket.off("user:status", handleUserStatus);
       socket.off("contact:request:received", handleContactRequest);
       socket.off("contact:accepted", handleContactAccepted);
+      socket.off("contact:deleted", handleContactDeleted);
+      socket.off("contact:deleted:success", handleContactDeleted);
     };
   }, [refetchRequests, refetchContacts]);
 
@@ -123,6 +132,26 @@ export default function ContactsScreen() {
     emitContactReject(request.id);
     refetchRequests();
   }, [refetchRequests]);
+
+  const handleDeleteContact = useCallback((contact: Contact) => {
+    if (!user) return;
+    
+    Alert.alert(
+      "Delete Contact",
+      `Remove ${contact.contact.username} from your contacts? This will also remove you from their contacts.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+            emitContactDelete(user.id, contact.contactId);
+          },
+        },
+      ]
+    );
+  }, [user]);
 
   const openScanner = useCallback(() => {
     navigation.navigate("Scanner");
@@ -200,10 +229,15 @@ export default function ContactsScreen() {
           </View>
         </View>
         
-        <Feather name="chevron-right" size={18} color={Colors.dark.textTertiary} />
+        <Pressable
+          style={({ pressed }) => [styles.deleteButton, pressed && styles.buttonPressed]}
+          onPress={() => handleDeleteContact(item)}
+        >
+          <Feather name="trash-2" size={16} color={Colors.dark.danger} />
+        </Pressable>
       </Pressable>
     );
-  }, [onlineUsers, openVerify]);
+  }, [onlineUsers, openVerify, handleDeleteContact]);
 
   const acceptedContacts = contacts?.filter(c => c.status === "accepted") || [];
   const pendingRequests = requests?.filter(r => r.status === "pending") || [];
@@ -420,6 +454,17 @@ const styles = StyleSheet.create({
   },
   statusOnline: {
     backgroundColor: Colors.dark.online,
+  },
+  deleteButton: {
+    width: 36,
+    height: 36,
+    borderRadius: BorderRadius.sm,
+    backgroundColor: Colors.dark.backgroundSecondary,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: Colors.dark.danger,
+    marginLeft: Spacing.sm,
   },
   contactInfo: {
     flex: 1,

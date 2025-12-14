@@ -119,6 +119,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateContactRequestStatus(data.requestId, "rejected");
     });
 
+    socket.on("contact:delete", async (data: { userId: string; contactId: string }) => {
+      try {
+        await storage.deleteContact(data.userId, data.contactId);
+        
+        const contactSocketId = connectedUsers.get(data.contactId);
+        if (contactSocketId) {
+          io.to(contactSocketId).emit("contact:deleted", { deletedBy: data.userId });
+        }
+        
+        socket.emit("contact:deleted:success", { contactId: data.contactId });
+      } catch (error) {
+        socket.emit("contact:error", { error: "Failed to delete contact" });
+      }
+    });
+
     socket.on("disconnect", async () => {
       for (const [userId, socketId] of connectedUsers.entries()) {
         if (socketId === socket.id) {

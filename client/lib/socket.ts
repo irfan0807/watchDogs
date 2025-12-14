@@ -80,3 +80,7 @@ export function emitContactAccept(payload: ContactAcceptPayload): void {
 export function emitContactReject(requestId: string): void {
   getSocket().emit("contact:reject", { requestId });
 }
+
+export function emitContactDelete(userId: string, contactId: string): void {
+  getSocket().emit("contact:delete", { userId, contactId });
+}
