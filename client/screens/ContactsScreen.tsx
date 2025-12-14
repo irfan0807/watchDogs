@@ -199,35 +199,37 @@ export default function ContactsScreen() {
     const isOnline = onlineUsers.has(item.contactId) || item.contact.isOnline;
     
     return (
-      <Pressable
-        style={({ pressed }) => [styles.contactItem, pressed && styles.contactItemPressed]}
-        onPress={() => openVerify(item)}
-      >
-        <View style={styles.avatarContainer}>
-          <View style={styles.avatar}>
-            <ThemedText style={styles.avatarText}>
-              [{item.contact.username.substring(0, 2).toUpperCase()}]
-            </ThemedText>
+      <View style={styles.contactItem}>
+        <Pressable
+          style={({ pressed }) => [styles.contactTouchable, pressed && styles.contactItemPressed]}
+          onPress={() => openVerify(item)}
+        >
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <ThemedText style={styles.avatarText}>
+                [{item.contact.username.substring(0, 2).toUpperCase()}]
+              </ThemedText>
+            </View>
+            <View style={[styles.statusDot, isOnline && styles.statusOnline]} />
           </View>
-          <View style={[styles.statusDot, isOnline && styles.statusOnline]} />
-        </View>
-        
-        <View style={styles.contactInfo}>
-          <ThemedText style={styles.contactName}>{item.contact.username}</ThemedText>
-          <View style={styles.verifyRow}>
-            {item.isVerified ? (
-              <>
-                <Feather name="check-circle" size={12} color={Colors.dark.secondary} />
-                <ThemedText style={styles.verifiedText}>VERIFIED</ThemedText>
-              </>
-            ) : (
-              <>
-                <Feather name="alert-triangle" size={12} color={Colors.dark.warning} />
-                <ThemedText style={styles.unverifiedText}>TAP TO VERIFY</ThemedText>
-              </>
-            )}
+          
+          <View style={styles.contactInfo}>
+            <ThemedText style={styles.contactName}>{item.contact.username}</ThemedText>
+            <View style={styles.verifyRow}>
+              {item.isVerified ? (
+                <>
+                  <Feather name="check-circle" size={12} color={Colors.dark.secondary} />
+                  <ThemedText style={styles.verifiedText}>VERIFIED</ThemedText>
+                </>
+              ) : (
+                <>
+                  <Feather name="alert-triangle" size={12} color={Colors.dark.warning} />
+                  <ThemedText style={styles.unverifiedText}>TAP TO VERIFY</ThemedText>
+                </>
+              )}
+            </View>
           </View>
-        </View>
+        </Pressable>
         
         <Pressable
           style={({ pressed }) => [styles.deleteButton, pressed && styles.buttonPressed]}
@@ -235,7 +237,7 @@ export default function ContactsScreen() {
         >
           <Feather name="trash-2" size={16} color={Colors.dark.danger} />
         </Pressable>
-      </Pressable>
+      </View>
     );
   }, [onlineUsers, openVerify, handleDeleteContact]);
 
@@ -419,8 +421,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.dark.border,
   },
+  contactTouchable: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
   contactItemPressed: {
-    backgroundColor: Colors.dark.backgroundDefault,
+    opacity: 0.7,
   },
   avatarContainer: {
     position: "relative",
