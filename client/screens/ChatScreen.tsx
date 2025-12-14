@@ -7,6 +7,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import { EncryptionWallpaper } from "@/components/EncryptionWallpaper";
 import { Colors, Spacing, BorderRadius, Fonts } from "@/constants/theme";
 import { useAuth } from "@/context/AuthContext";
 import { Feather } from "@expo/vector-icons";
@@ -173,6 +174,7 @@ export default function ChatScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      <EncryptionWallpaper inputText={message} publicKey={contactPublicKey} />
       <KeyboardAvoidingView style={styles.keyboardView} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={90}>
         <FlatList
           ref={flatListRef}
