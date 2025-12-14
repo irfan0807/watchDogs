@@ -11,6 +11,7 @@ import { Feather } from "@expo/vector-icons";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { generateSafetyNumber } from "@/lib/crypto";
 import * as Haptics from "expo-haptics";
+import { getApiUrl } from "@/lib/query-client";
 
 type VerifyRouteProp = RouteProp<RootStackParamList, "VerifyContact">;
 
@@ -27,9 +28,23 @@ export default function VerifyContactScreen() {
   }, [user?.publicKey, contactPublicKey]);
 
   const handleVerify = useCallback(async () => {
-    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    navigation.goBack();
-  }, [navigation]);
+    try {
+      const { contactId } = route.params;
+      await fetch(`${getApiUrl()}/api/contacts/${contactId}/verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          userId: user?.id,
+          isVerified: true, 
+          safetyNumber 
+        }),
+      });
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      navigation.goBack();
+    } catch (error) {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    }
+  }, [navigation, route.params, user?.id, safetyNumber]);
 
   return (
     <ThemedView style={styles.container}>

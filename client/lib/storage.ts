@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform } from "react-native";
 import type { KeyPair } from "@/lib/crypto";
 
 const KEYS = {
@@ -9,6 +9,40 @@ const KEYS = {
   SELF_DESTRUCT_SECONDS: "@watchdog:selfDestructSeconds",
 };
 
+const storage = {
+  getItem: async (key: string): Promise<string | null> => {
+    if (Platform.OS === "web") {
+      return localStorage.getItem(key);
+    }
+    const AsyncStorage = (await import("@react-native-async-storage/async-storage")).default;
+    return AsyncStorage.getItem(key);
+  },
+  setItem: async (key: string, value: string): Promise<void> => {
+    if (Platform.OS === "web") {
+      localStorage.setItem(key, value);
+      return;
+    }
+    const AsyncStorage = (await import("@react-native-async-storage/async-storage")).default;
+    await AsyncStorage.setItem(key, value);
+  },
+  removeItem: async (key: string): Promise<void> => {
+    if (Platform.OS === "web") {
+      localStorage.removeItem(key);
+      return;
+    }
+    const AsyncStorage = (await import("@react-native-async-storage/async-storage")).default;
+    await AsyncStorage.removeItem(key);
+  },
+  multiRemove: async (keys: string[]): Promise<void> => {
+    if (Platform.OS === "web") {
+      keys.forEach((key) => localStorage.removeItem(key));
+      return;
+    }
+    const AsyncStorage = (await import("@react-native-async-storage/async-storage")).default;
+    await AsyncStorage.multiRemove(keys);
+  },
+};
+
 export interface StoredUser {
   id: string;
   username: string;
@@ -17,11 +51,11 @@ export interface StoredUser {
 }
 
 export async function storeUser(user: StoredUser): Promise<void> {
-  await AsyncStorage.setItem(KEYS.USER, JSON.stringify(user));
+  await storage.setItem(KEYS.USER, JSON.stringify(user));
 }
 
 export async function getStoredUser(): Promise<StoredUser | null> {
-  const data = await AsyncStorage.getItem(KEYS.USER);
+  const data = await storage.getItem(KEYS.USER);
   return data ? JSON.parse(data) : null;
 }
 
@@ -30,39 +64,39 @@ export async function storeKeys(
   signedPreKey: KeyPair
 ): Promise<void> {
   await Promise.all([
-    AsyncStorage.setItem(KEYS.IDENTITY_KEY, JSON.stringify(identityKey)),
-    AsyncStorage.setItem(KEYS.SIGNED_PRE_KEY, JSON.stringify(signedPreKey)),
+    storage.setItem(KEYS.IDENTITY_KEY, JSON.stringify(identityKey)),
+    storage.setItem(KEYS.SIGNED_PRE_KEY, JSON.stringify(signedPreKey)),
   ]);
 }
 
 export async function getIdentityKey(): Promise<KeyPair | null> {
-  const data = await AsyncStorage.getItem(KEYS.IDENTITY_KEY);
+  const data = await storage.getItem(KEYS.IDENTITY_KEY);
   return data ? JSON.parse(data) : null;
 }
 
 export async function getSignedPreKey(): Promise<KeyPair | null> {
-  const data = await AsyncStorage.getItem(KEYS.SIGNED_PRE_KEY);
+  const data = await storage.getItem(KEYS.SIGNED_PRE_KEY);
   return data ? JSON.parse(data) : null;
 }
 
 export async function setEncryptionEnabled(enabled: boolean): Promise<void> {
-  await AsyncStorage.setItem(KEYS.ENCRYPTION_ENABLED, JSON.stringify(enabled));
+  await storage.setItem(KEYS.ENCRYPTION_ENABLED, JSON.stringify(enabled));
 }
 
 export async function getEncryptionEnabled(): Promise<boolean> {
-  const data = await AsyncStorage.getItem(KEYS.ENCRYPTION_ENABLED);
+  const data = await storage.getItem(KEYS.ENCRYPTION_ENABLED);
   return data ? JSON.parse(data) : true;
 }
 
 export async function setSelfDestructSeconds(seconds: number | null): Promise<void> {
-  await AsyncStorage.setItem(KEYS.SELF_DESTRUCT_SECONDS, JSON.stringify(seconds));
+  await storage.setItem(KEYS.SELF_DESTRUCT_SECONDS, JSON.stringify(seconds));
 }
 
 export async function getSelfDestructSeconds(): Promise<number | null> {
-  const data = await AsyncStorage.getItem(KEYS.SELF_DESTRUCT_SECONDS);
+  const data = await storage.getItem(KEYS.SELF_DESTRUCT_SECONDS);
   return data ? JSON.parse(data) : null;
 }
 
 export async function clearAllData(): Promise<void> {
-  await AsyncStorage.multiRemove(Object.values(KEYS));
+  await storage.multiRemove(Object.values(KEYS));
 }

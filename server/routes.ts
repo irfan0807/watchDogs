@@ -233,5 +233,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/contacts/:contactId/verify", async (req, res) => {
+    try {
+      const { userId, isVerified, safetyNumber } = req.body;
+      const contact = await storage.getContact(userId, req.params.contactId);
+      if (!contact) {
+        return res.status(404).json({ error: "Contact not found" });
+      }
+      await storage.updateContactVerification(contact.id, isVerified, safetyNumber);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to verify contact" });
+    }
+  });
+
+  setInterval(async () => {
+    try {
+      const expired = await storage.getExpiredMessages();
+      for (const msg of expired) {
+        if (msg.selfDestructAt && new Date() > msg.selfDestructAt) {
+          await storage.deleteMessage(msg.id);
+        }
+      }
+    } catch (error) {
+      console.error("Self-destruct cleanup error:", error);
+    }
+  }, 60000);
+
   return httpServer;
 }
