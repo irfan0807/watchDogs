@@ -176,7 +176,7 @@ export default function ChatScreen() {
       <KeyboardAvoidingView style={styles.keyboardView} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={90}>
         <FlatList
           ref={flatListRef}
-          data={[...(messages || [])].reverse()}
+          data={messages || []}
           keyExtractor={(item) => item.id}
           renderItem={renderMessage}
           inverted
