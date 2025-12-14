@@ -2,6 +2,7 @@ import { io, Socket } from "socket.io-client";
 import { getApiUrl } from "@/lib/query-client";
 
 let socket: Socket | null = null;
+let currentUserId: string | null = null;
 
 export function getSocket(): Socket {
   if (!socket) {
@@ -9,6 +10,12 @@ export function getSocket(): Socket {
     socket = io(url, {
       transports: ["websocket", "polling"],
       autoConnect: true,
+    });
+    
+    socket.on("connect", () => {
+      if (currentUserId) {
+        socket?.emit("user:online", currentUserId);
+      }
     });
   }
   return socket;
@@ -19,6 +26,7 @@ export function disconnectSocket(): void {
     socket.disconnect();
     socket = null;
   }
+  currentUserId = null;
 }
 
 export interface MessagePayload {
@@ -42,7 +50,11 @@ export interface ContactAcceptPayload {
 }
 
 export function emitUserOnline(userId: string): void {
-  getSocket().emit("user:online", userId);
+  currentUserId = userId;
+  const s = getSocket();
+  if (s.connected) {
+    s.emit("user:online", userId);
+  }
 }
 
 export function emitSendMessage(payload: MessagePayload): void {
