@@ -149,12 +149,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const [userId, socketId] of connectedUsers.entries()) {
         if (socketId === socket.id) {
           connectedUsers.delete(userId);
+          
+          // Remove from Redis
+          await cache.removeUserOnline(userId);
+          
           await storage.updateUserOnlineStatus(userId, false);
           io.emit("user:status", { userId, isOnline: false });
+          
+          // Publish to Kafka
+          await publishUserEvent({
+            type: "offline",
+            userId,
+            timestamp: new Date(),
+          }).catch(err => console.error("Kafka publish error:", err));
+          
           break;
         }
       }
       console.log("Client disconnected:", socket.id);
+    });
+
+    // Voice call signaling
+    socket.on("call:offer", (data: { from: string; to: string; offer: RTCSessionDescriptionInit }) => {
+      const recipientSocketId = connectedUsers.get(data.to);
+      if (recipientSocketId) {
+        io.to(recipientSocketId).emit("call:incoming", {
+          from: data.from,
+          offer: data.offer,
+        });
+      }
+    });
+
+    socket.on("call:request-offer", (data: { to: string }) => {
+      const recipientSocketId = connectedUsers.get(data.to);
+      if (recipientSocketId) {
+        io.to(recipientSocketId).emit("call:get-offer");
+      }
+    });
+
+    socket.on("call:answer", (data: { from: string; to: string; answer: RTCSessionDescriptionInit }) => {
+      const recipientSocketId = connectedUsers.get(data.to);
+      if (recipientSocketId) {
+        io.to(recipientSocketId).emit("call:answer", {
+          from: data.from,
+          answer: data.answer,
+        });
+      }
+    });
+
+    socket.on("call:ice-candidate", (data: { to: string; candidate: RTCIceCandidateInit }) => {
+      const recipientSocketId = connectedUsers.get(data.to);
+      if (recipientSocketId) {
+        io.to(recipientSocketId).emit("call:ice-candidate", {
+          candidate: data.candidate,
+        });
+      }
+    });
+
+    socket.on("call:reject", (data: { from: string; to: string }) => {
+      const recipientSocketId = connectedUsers.get(data.to);
+      if (recipientSocketId) {
+        io.to(recipientSocketId).emit("call:rejected");
+      }
+    });
+
+    socket.on("call:end", (data: { from: string; to: string }) => {
+      const recipientSocketId = connectedUsers.get(data.to);
+      if (recipientSocketId) {
+        io.to(recipientSocketId).emit("call:ended");
+      }
     });
   });
 

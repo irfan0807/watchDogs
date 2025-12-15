@@ -62,8 +62,22 @@ export default function ChatScreen() {
           </View>
         </View>
       ),
+      headerRight: () => (
+        <Pressable
+          onPress={() => {
+            navigation.navigate("VoiceCall" as any, {
+              contactId,
+              contactName,
+              isIncoming: false,
+            });
+          }}
+          style={styles.callButton}
+        >
+          <Feather name="phone" size={22} color={Colors.dark.secondary} />
+        </Pressable>
+      ),
     });
-  }, [navigation, contactName]);
+  }, [navigation, contactName, contactId]);
 
   useEffect(() => {
     async function loadSettings() {
@@ -224,6 +238,7 @@ const styles = StyleSheet.create({
   headerName: { fontSize: 16, fontWeight: "600", color: Colors.dark.text, fontFamily: Fonts?.mono },
   encryptedBadge: { flexDirection: "row", alignItems: "center", gap: 4 },
   encryptedText: { fontSize: 9, color: Colors.dark.secondary, fontFamily: Fonts?.mono, letterSpacing: 0.5 },
+  callButton: { marginRight: 16 },
   messagesList: { paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm },
   messageContainer: { marginVertical: Spacing.xs },
   messageSent: { alignItems: "flex-end" },
