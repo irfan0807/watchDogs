@@ -89,6 +89,7 @@ services:
       - NODE_ENV=development
       - PORT=8080
       - REACT_NATIVE_PACKAGER_HOSTNAME=192.168.0.105
+      - EXPO_PUBLIC_DOMAIN=192.168.0.105:3000
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKERS=kafka:29092
     volumes:

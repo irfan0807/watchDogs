@@ -4,6 +4,9 @@ FROM node:20-alpine
 # Set working directory
 WORKDIR /app
 
+# Set environment variables
+ENV EXPO_PUBLIC_DOMAIN=192.168.0.105:3000
+
 # Copy package files and install dependencies
 COPY package.json package-lock.json* ./
 RUN npm install

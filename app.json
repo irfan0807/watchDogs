@@ -42,6 +42,9 @@
     ],
     "experiments": {
       "reactCompiler": true
+    },
+    "extra": {
+      "EXPO_PUBLIC_DOMAIN": "192.168.0.105:3000"
     }
   }
 }
