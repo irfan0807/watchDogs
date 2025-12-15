@@ -81,7 +81,9 @@ export function generateSafetyNumber(
   publicKey1: string,
   publicKey2: string
 ): string {
-  const combined = publicKey1 + publicKey2;
+  // Sort keys alphabetically to ensure consistent safety number on both devices
+  const keys = [publicKey1, publicKey2].sort();
+  const combined = keys[0] + keys[1];
   const hash = nacl.hash(naclUtil.decodeUTF8(combined));
   const hashBase64 = naclUtil.encodeBase64(hash);
   

@@ -11,7 +11,14 @@ export function getApiUrl(): string {
     throw new Error("EXPO_PUBLIC_DOMAIN is not set");
   }
 
-  let url = new URL(`https://${host}`);
+  // Check if host already includes protocol
+  if (host.startsWith('http://') || host.startsWith('https://')) {
+    return host;
+  }
+
+  // For local development, use http; for production use https
+  const protocol = host.includes('localhost') || host.match(/^\d+\.\d+\.\d+\.\d+/) ? 'http' : 'https';
+  let url = new URL(`${protocol}://${host}`);
 
   return url.href;
 }
@@ -30,7 +37,7 @@ export async function apiRequest(
 ): Promise<Response> {
   const baseUrl = getApiUrl();
   const url = new URL(route, baseUrl);
-
+ //update check
   const res = await fetch(url, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
